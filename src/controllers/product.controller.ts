@@ -1,0 +1,7 @@
+import { Request, Response } from 'express';
+import { Product } from '../models/Product';
+
+export async function getAllProducts(_req: Request, res: Response) {
+    const products = await Product.find();
+    return res.status(200).json(products);
+}
