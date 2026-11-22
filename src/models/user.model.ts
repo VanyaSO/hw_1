@@ -1,9 +1,6 @@
 import mongoose, { InferSchemaType } from 'mongoose';
-
-export enum Roles {
-    Customer = 'customer',
-    Admin = 'admin',
-}
+import { toJSONTransform } from '../utils/toJSON';
+import { Role } from '../types/auth';
 
 const userSchema = new mongoose.Schema(
     {
@@ -21,24 +18,16 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: Object.values(Roles),
-            default: Roles.Customer,
+            enum: Object.values(Role),
+            default: Role.Customer,
         },
     },
     {
         timestamps: true,
-        toJSON: {
-            transform(_doc, ret: Record<string, any>) {
-                const { _id, __v, password, ...rest } = ret;
-                return {
-                    id: _id,
-                    ...rest,
-                };
-            },
-        },
+        toJSON: { transform: toJSONTransform(['password']) },
     },
 );
 
-type IUser = InferSchemaType<typeof userSchema>;
+export type IUser = InferSchemaType<typeof userSchema>;
 
 export const User = mongoose.model<IUser>('User', userSchema);

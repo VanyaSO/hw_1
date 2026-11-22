@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AccessTokenPayload } from '../types/auth';
-import { jwtAccessSecret } from '../config/env';
+import { verifyAccessToken } from '../utils/tokens';
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
     const header = req.headers.authorization;
@@ -12,7 +11,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     const token = header.split(' ')[1];
 
     try {
-        const payload = jwt.verify(token, jwtAccessSecret) as AccessTokenPayload;
+        const payload = verifyAccessToken(token);
         req.user = {
             id: payload.sub,
             role: payload.role,

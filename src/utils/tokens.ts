@@ -1,11 +1,10 @@
 import { accessTokenTtl, jwtAccessSecret, jwtRefreshSecret, refreshTokenTtl } from '../config/env';
-import { RefreshToken } from '../models/RefreshToken';
-import { AccessTokenPayload } from '../types/auth';
+import { RefreshToken } from '../models/refreshToken.model';
+import { AccessTokenPayload, Role } from '../types/auth';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { Roles } from '../models/User';
 import { randomUUID } from 'crypto';
 
-export async function createTokenPair(userId: string, userRole: Roles) {
+export async function createTokenPair(userId: string, userRole: Role) {
     const payload: AccessTokenPayload = { sub: userId, role: userRole };
     const accessToken = jwt.sign(payload, jwtAccessSecret, { expiresIn: accessTokenTtl });
 
@@ -21,4 +20,12 @@ export async function createTokenPair(userId: string, userRole: Roles) {
     });
 
     return { accessToken, refreshToken, refreshTokenExpiresAt: expiresAt };
+}
+
+export function verifyAccessToken(token: string): AccessTokenPayload {
+    return jwt.verify(token, jwtAccessSecret) as AccessTokenPayload;
+}
+
+export function verifyRefreshToken(token: string): JwtPayload {
+    return jwt.verify(token, jwtRefreshSecret) as JwtPayload;
 }

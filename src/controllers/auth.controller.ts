@@ -1,29 +1,30 @@
 import { Request, Response } from 'express';
-import { User } from '../models/User';
-import { RefreshToken } from '../models/RefreshToken';
+import { User } from '../models/user.model';
+import { RefreshToken } from '../models/refreshToken.model';
 import { hashPassword, verifyPassword } from '../utils/password';
 import jwt from 'jsonwebtoken';
-import { jwtRefreshSecret } from '../config/env';
+import mongoose from 'mongoose';
 import { refreshTokenCookie } from '../config/cookies';
-import { createTokenPair } from '../utils/tokens';
+import { createTokenPair, verifyRefreshToken } from '../utils/tokens';
 import { setCookie, clearCookie } from '../utils/cookies';
+import { LoginDto, RegisterDto } from '../types/auth';
 
-export async function register(req: Request, res: Response) {
+export async function register(req: Request<{}, unknown, RegisterDto>, res: Response) {
     const { email, password } = req.body;
     const hashedPassword = await hashPassword(password);
 
     try {
         const user = await User.create({ email: email, password: hashedPassword });
-        res.status(201).json(user);
+        return res.status(201).json(user);
     } catch (err) {
-        if ((err as any).code === 11000) {
+        if (err instanceof mongoose.mongo.MongoServerError && err.code === 11000) {
             return res.status(409).json({ error: 'Email already exists' });
         }
         throw err;
     }
 }
 
-export async function login(req: Request, res: Response) {
+export async function login(req: Request<{}, unknown, LoginDto>, res: Response) {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select('+password');
@@ -31,8 +32,8 @@ export async function login(req: Request, res: Response) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isPasswordVerify = await verifyPassword(password, user.password);
-    if (!isPasswordVerify) {
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -43,10 +44,7 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function getCurrentUser(req: Request, res: Response) {
-    const userId = req.user?.id;
-    if (!userId) {
-        return res.status(401).json({ error: 'Invalid user id' });
-    }
+    const userId = req.user!.id;
 
     const currentUser = await User.findById(userId);
     if (!currentUser) {
@@ -63,15 +61,15 @@ export async function refresh(req: Request, res: Response) {
     }
 
     try {
-        jwt.verify(currentRefreshToken, jwtRefreshSecret);
+        verifyRefreshToken(currentRefreshToken);
 
-        const refreshTokenData = await RefreshToken.findOneAndDelete({ token: currentRefreshToken });
-        if (!refreshTokenData) {
+        const storedToken = await RefreshToken.findOneAndDelete({ token: currentRefreshToken });
+        if (!storedToken) {
             clearCookie(res, refreshTokenCookie);
             return res.status(401).json({ error: 'Refresh token not found' });
         }
 
-        const user = await User.findById(refreshTokenData.userId);
+        const user = await User.findById(storedToken.userId);
         if (!user) {
             clearCookie(res, refreshTokenCookie);
             return res.status(401).json({ error: 'User not found' });
@@ -102,5 +100,5 @@ export async function logout(req: Request, res: Response) {
         clearCookie(res, refreshTokenCookie);
     }
 
-    res.status(204).end();
+    return res.status(204).end();
 }

@@ -1,7 +1,7 @@
-import { Roles } from '../models/User';
+import { Role } from '../types/auth';
 import { Request, Response, NextFunction } from 'express';
 
-export function roleMiddleware(...roles: Roles[]) {
+export function roleMiddleware(...roles: Role[]) {
     return (req: Request, res: Response, next: NextFunction) => {
         const user = req.user;
         if (!user) {

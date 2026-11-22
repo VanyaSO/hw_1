@@ -17,6 +17,6 @@ const refreshTokenSchema = new mongoose.Schema({
     },
 });
 
-type IRefreshToken = InferSchemaType<typeof refreshTokenSchema>;
+export type IRefreshToken = InferSchemaType<typeof refreshTokenSchema>;
 
 export const RefreshToken = mongoose.model<IRefreshToken>('RefreshToken', refreshTokenSchema);

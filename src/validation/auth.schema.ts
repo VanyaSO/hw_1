@@ -1,6 +1,6 @@
 import z from 'zod';
 
-const emailField = z.string().trim().toLowerCase().pipe(z.email());
+const emailField = z.string().trim().toLowerCase().min(1).pipe(z.email());
 
 export const registerSchema = z.object({
     email: emailField,

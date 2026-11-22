@@ -1,4 +1,5 @@
 import mongoose, { InferSchemaType } from 'mongoose';
+import { toJSONTransform } from '../utils/toJSON';
 
 const productSchema = new mongoose.Schema(
     {
@@ -22,18 +23,10 @@ const productSchema = new mongoose.Schema(
     },
     {
         timestamps: true,
-        toJSON: {
-            transform(_doc, ret: Record<string, any>) {
-                const { _id, __v, ...rest } = ret;
-                return {
-                    id: _id,
-                    ...rest,
-                };
-            },
-        },
+        toJSON: { transform: toJSONTransform() },
     },
 );
 
-type IProduct = InferSchemaType<typeof productSchema>;
+export type IProduct = InferSchemaType<typeof productSchema>;
 
 export const Product = mongoose.model<IProduct>('Product', productSchema);

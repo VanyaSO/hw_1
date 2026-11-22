@@ -1,4 +1,6 @@
-import { User, Roles } from '../models/User';
+import mongoose from 'mongoose';
+import { User } from '../models/user.model';
+import { Role } from '../types/auth';
 import { adminEmail, adminPassword } from '../config/env';
 import { hashPassword } from '../utils/password';
 import { closeDB, connectDB } from '../config/db';
@@ -15,11 +17,11 @@ async function createAdmin() {
         await User.create({
             email: adminEmail,
             password: hashedPassword,
-            role: Roles.Admin,
+            role: Role.Admin,
         });
         console.log('Admin created!');
     } catch (err) {
-        if ((err as any).code === 11000) {
+        if (err instanceof mongoose.mongo.MongoServerError && err.code === 11000) {
             console.log('Admin is already created');
             return;
         }
